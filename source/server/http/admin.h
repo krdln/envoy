@@ -326,6 +326,7 @@ private:
     const Network::ActiveUdpListenerFactory* udpListenerFactory() override {
       NOT_REACHED_GCOVR_EXCL_LINE;
     }
+    Network::ConnectionBalancerOptRef connectionBalancer() override { return absl::nullopt; }
 
     AdminImpl& parent_;
     const std::string name_;

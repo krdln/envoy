@@ -204,6 +204,29 @@ private:
 //                     initializing all listeners after workers are started.
 
 /**
+ * fixfix
+ */
+class ExactConnectionBalancerImpl : public Network::ConnectionBalancer {
+public:
+  // Network::ConnectionBalancer
+  void registerHandler(Network::BalancedConnectionHandler& handler) override;
+  void unregisterHandler(Network::BalancedConnectionHandler& handler) override;
+  BalanceConnectionResult
+  balanceConnection(Network::ConnectionSocketPtr&& socket,
+                    Network::BalancedConnectionHandler& current_handler) override;
+
+private:
+  struct TagEntry {
+    absl::Mutex handler_lock_;
+    std::vector<Network::BalancedConnectionHandler*> handlers_ GUARDED_BY(handler_lock_);
+  };
+  using TagEntryPtr = std::unique_ptr<TagEntry>;
+
+  absl::Mutex tag_map_lock_;
+  absl::flat_hash_map<uint64_t, TagEntryPtr> tag_map_ GUARDED_BY(tag_map_lock_);
+};
+
+/**
  * Maps proto config to runtime config for a listener with a network filter chain.
  */
 class ListenerImpl : public Network::ListenerConfig,
@@ -281,6 +304,10 @@ public:
   const std::string& name() const override { return name_; }
   const Network::ActiveUdpListenerFactory* udpListenerFactory() override {
     return udp_listener_factory_.get();
+  }
+  Network::ConnectionBalancerOptRef connectionBalancer() override {
+    return connection_balancer_ != nullptr ? *connection_balancer_
+                                           : Network::ConnectionBalancerOptRef();
   }
 
   // Server::Configuration::ListenerFactoryContext
@@ -383,6 +410,8 @@ private:
   const std::chrono::milliseconds listener_filters_timeout_;
   const bool continue_on_listener_filters_timeout_;
   Network::ActiveUdpListenerFactoryPtr udp_listener_factory_;
+  Network::ConnectionBalancerPtr connection_balancer_;
+
   // to access ListenerManagerImpl::factory_.
   friend class ListenerFilterChainFactoryBuilder;
 };

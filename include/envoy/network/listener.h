@@ -13,7 +13,48 @@
 namespace Envoy {
 namespace Network {
 
-class UdpListenerFilterManager;
+/**
+ * fixfix
+ */
+class BalancedConnectionHandler {
+public:
+  virtual ~BalancedConnectionHandler() = default;
+
+  virtual uint64_t tag() PURE;
+  virtual uint64_t numConnections() PURE;
+  virtual void incNumConnections() PURE;
+  virtual void post(Network::ConnectionSocketPtr&& socket) PURE;
+};
+
+/**
+ * fixfix
+ */
+class ConnectionBalancer {
+public:
+  virtual ~ConnectionBalancer() = default;
+
+  /**
+   *
+   */
+  virtual void registerHandler(BalancedConnectionHandler& handler) PURE;
+
+  /**
+   *
+   */
+  virtual void unregisterHandler(BalancedConnectionHandler& handler) PURE;
+
+  /**
+   *
+   */
+  enum class BalanceConnectionResult { Rebalanced, Continue };
+  virtual BalanceConnectionResult
+  balanceConnection(Network::ConnectionSocketPtr&& socket,
+                    BalancedConnectionHandler& current_handler) PURE;
+};
+
+using ConnectionBalancerPtr = std::unique_ptr<ConnectionBalancer>;
+using ConnectionBalancerOptRef = absl::optional<std::reference_wrapper<ConnectionBalancer>>;
+
 class ActiveUdpListenerFactory;
 
 /**
@@ -97,6 +138,11 @@ public:
    * nullptr.
    */
   virtual const ActiveUdpListenerFactory* udpListenerFactory() PURE;
+
+  /**
+   * fixfix
+   */
+  virtual ConnectionBalancerOptRef connectionBalancer() PURE;
 };
 
 /**
@@ -115,12 +161,6 @@ public:
    */
   virtual void onAccept(ConnectionSocketPtr&& socket,
                         bool hand_off_restored_destination_connections = true) PURE;
-
-  /**
-   * Called when a new connection is accepted.
-   * @param new_connection supplies the new connection that is moved into the callee.
-   */
-  virtual void onNewConnection(ConnectionPtr&& new_connection) PURE;
 };
 
 /**

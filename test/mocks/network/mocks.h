@@ -129,10 +129,8 @@ public:
   void onAccept(ConnectionSocketPtr&& socket, bool redirected) override {
     onAccept_(socket, redirected);
   }
-  void onNewConnection(ConnectionPtr&& conn) override { onNewConnection_(conn); }
 
   MOCK_METHOD2(onAccept_, void(ConnectionSocketPtr& socket, bool redirected));
-  MOCK_METHOD1(onNewConnection_, void(ConnectionPtr& conn));
 };
 
 class MockUdpListenerCallbacks : public UdpListenerCallbacks {
@@ -312,6 +310,7 @@ public:
   MOCK_CONST_METHOD0(listenerTag, uint64_t());
   MOCK_CONST_METHOD0(name, const std::string&());
   MOCK_METHOD0(udpListenerFactory, const Network::ActiveUdpListenerFactory*());
+  MOCK_METHOD0(connectionBalancer, ConnectionBalancerOptRef());
 
   testing::NiceMock<MockFilterChainFactory> filter_chain_factory_;
   testing::NiceMock<MockListenSocket> socket_;
@@ -338,8 +337,6 @@ public:
   MOCK_METHOD0(incNumConnections, void());
   MOCK_METHOD0(decNumConnections, void());
   MOCK_METHOD1(addListener, void(ListenerConfig& config));
-  MOCK_METHOD1(findListenerByAddress,
-               Network::Listener*(const Network::Address::Instance& address));
   MOCK_METHOD1(removeListeners, void(uint64_t listener_tag));
   MOCK_METHOD1(stopListeners, void(uint64_t listener_tag));
   MOCK_METHOD0(stopListeners, void());
